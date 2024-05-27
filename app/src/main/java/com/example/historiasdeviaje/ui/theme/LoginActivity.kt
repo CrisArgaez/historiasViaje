@@ -67,7 +67,7 @@ class LoginActivity : AppCompatActivity() {
             Log.d("LoginActivity", "Respuesta del servidor: $result")
             val jsonResponse = JSONObject(result)
             if (jsonResponse["success"] == true) {
-                val intent = Intent(this@LoginActivity, PublicarHistoriaActivity::class.java)
+                val intent = Intent(this@LoginActivity, VerHistoriaActivity::class.java)
                 startActivity(intent)
             } else {
                 Log.d("LoginActivity", "Error al iniciar sesión")
