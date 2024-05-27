@@ -1,19 +1,27 @@
 CREATE DATABASE Android;
-
 USE Android;
 
 CREATE TABLE Usuarios (
-    UsuarioID INT PRIMARY KEY AUTO_INCREMENT,
-    NombreUsuario VARCHAR(255) NOT NULL,
-    Nombre VARCHAR(255),
-    Contrasena VARCHAR(255) NOT NULL
+	UsuarioID INT PRIMARY KEY AUTO_INCREMENT,
+	NombreUsuario VARCHAR(255) NOT NULL,
+	Nombre VARCHAR(255),
+	Contrasena VARCHAR(255) NOT NULL
 );
-
-CREATE TABLE Historias (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    titulo VARCHAR(255) NOT NULL,
-    descripcion TEXT,
-    imagen LONGBLOB
+CREATE TABLE Historias ( 
+HistoriaID INT PRIMARY KEY AUTO_INCREMENT, 
+UsuarioID INT, 
+Titulo VARCHAR(255) NOT NULL, 
+Descripcion TEXT, 
+Imagen LONGBLOB,   
+FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID) 
 );
+ CREATE TABLE favoritosUsuario (
+    FavoritoID INT PRIMARY KEY AUTO_INCREMENT,
+    UsuarioID INT,
+    HistoriaID INT,
+    FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID),
+    FOREIGN KEY (HistoriaID) REFERENCES Historias(HistoriaID)
+);
+select * from  Usuarios;
 select * from Historias;
-
+SELECT * FROM favoritosUsuario;

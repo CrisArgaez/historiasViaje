@@ -69,6 +69,13 @@ class VerHistoriaActivity : AppCompatActivity() {
             startActivity(intent)
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
+
+        val addButton: FloatingActionButton = findViewById(R.id.addButton)
+        val intent = Intent(this, PublicarHistoriaActivity::class.java)
+
+        addButton.setOnClickListener {
+            startActivity(intent)
+        }
     }
 
     inner class ObtenerHistoriasTask : AsyncTask<Void, Void, String>() {
