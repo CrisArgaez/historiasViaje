@@ -6,11 +6,14 @@ import android.content.SharedPreferences
 import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Base64
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -27,7 +30,6 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-
 // Clase de datos para representar una historia
 data class Historia(
     val historiaId: Int,
@@ -40,6 +42,8 @@ class VerHistoriaActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: HistoriaAdapter
+    private lateinit var searchEditText: EditText
+    private var historiasList: ArrayList<Historia> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +51,7 @@ class VerHistoriaActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
+        searchEditText = findViewById(R.id.searchEditText)
 
         val sharedPreferences = getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
 
@@ -97,6 +102,28 @@ class VerHistoriaActivity : AppCompatActivity() {
             intent.putExtra("usuarioID", idUsuario) // Agrega el ID del usuario al Intent
             startActivity(intent)
         }
+
+        // Añadir el TextWatcher al EditText de búsqueda
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                filter(s.toString())
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+    }
+
+    // Método para filtrar la lista de historias basado en el título
+    private fun filter(text: String) {
+        val filteredList = ArrayList<Historia>()
+        for (historia in historiasList) {
+            if (historia.titulo.contains(text, true)) {
+                filteredList.add(historia)
+            }
+        }
+        adapter.updateData(filteredList)
     }
 
     inner class ObtenerHistoriasTask : AsyncTask<Void, Void, String>() {
@@ -126,6 +153,7 @@ class VerHistoriaActivity : AppCompatActivity() {
                         )
                         historias.add(historia)
                     }
+                    historiasList = historias // Guarda la lista completa
                     adapter.updateData(historias)
                 } else {
                     Toast.makeText(this@VerHistoriaActivity, "No hay historias disponibles", Toast.LENGTH_SHORT).show()
@@ -149,7 +177,6 @@ class HistoriaAdapter(private val context: Context, private var historias: Array
         val descripcionTextView: TextView = itemView.findViewById(R.id.descripcionTextView)
         val imagenImageView: ImageView = itemView.findViewById(R.id.imagenImageView)
         val favoriteButton: FloatingActionButton = itemView.findViewById(R.id.favoriteButton) // <-- Referencia al botón
-
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
