@@ -5,7 +5,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -19,12 +22,16 @@
         android:theme="@style/Theme.HistoriasdeViaje"
         tools:targetApi="31">
         <activity
-            android:name=".ui.theme.LoginActivity"
+            android:name=".ui.theme.FavoritosActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.theme.VerHistoriaActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.HistoriasdeViaje">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -34,6 +41,7 @@
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.AppCompat.Light.DarkActionBar" />
-        <activity android:name=".ui.theme.VerHistoriaActivity" />
+        <activity android:name=".ui.theme.LoginActivity" />
     </application>
+
 </manifest>

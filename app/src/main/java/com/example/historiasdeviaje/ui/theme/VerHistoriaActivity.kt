@@ -1,5 +1,7 @@
 package com.example.historiasdeviaje.ui.theme
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.os.Bundle
@@ -9,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -16,8 +19,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.historiasdeviaje.R
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.json.JSONArray
 import org.json.JSONException
+import org.json.JSONObject
+import java.net.HttpURLConnection
 import java.net.URL
 
 // Clase de datos para representar una historia
@@ -39,10 +45,29 @@ class VerHistoriaActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = HistoriaAdapter(emptyList()) // Inicializa con una lista vacía
+
+        val idUsuario = obtenerIdUsuario() // Implementa esta función para obtener el ID del usuario
+
+        adapter = HistoriaAdapter(this, ArrayList(), idUsuario)
         recyclerView.adapter = adapter
 
         ObtenerHistoriasTask().execute()
+
+        // Referencia al botón "Favoritos" en la barra de navegación inferior
+        val favoritosButton = findViewById<LinearLayout>(R.id.favoritosButton)
+
+        favoritosButton.setOnClickListener {
+            // Iniciar FavoritosActivity
+            val intent = Intent(this@VerHistoriaActivity, FavoritosActivity::class.java)
+            startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        }
+    }
+
+    // Función para obtener el ID del usuario (debes implementarla)
+    private fun obtenerIdUsuario(): Int {
+        // ... (lógica para obtener el ID del usuario)
+        return 1 // Ejemplo: Devuelve un ID de usuario de prueba
     }
 
     inner class ObtenerHistoriasTask : AsyncTask<Void, Void, String>() {
@@ -85,12 +110,14 @@ class VerHistoriaActivity : AppCompatActivity() {
 }
 
 // Adaptador para el RecyclerView
-class HistoriaAdapter(private var historias: List<Historia>) : RecyclerView.Adapter<HistoriaAdapter.ViewHolder>() {
+class HistoriaAdapter(private val context: Context, private var historias: ArrayList<Historia>, private val idUsuario: Int) : RecyclerView.Adapter<HistoriaAdapter.ViewHolder>() {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tituloTextView: TextView = itemView.findViewById(R.id.tituloTextView)
         val descripcionTextView: TextView = itemView.findViewById(R.id.descripcionTextView)
         val imagenImageView: ImageView = itemView.findViewById(R.id.imagenImageView)
+        val favoriteButton: FloatingActionButton = itemView.findViewById(R.id.favoriteButton) // <-- Referencia al botón
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -102,11 +129,16 @@ class HistoriaAdapter(private var historias: List<Historia>) : RecyclerView.Adap
         val historia = historias[position]
         holder.tituloTextView.text = historia.titulo
         holder.descripcionTextView.text = historia.descripcion
+        val idUsuario = 1;
 
-        // Carga la imagen desde el Base64
+        // Cargar imagen (sin cambios)
         val decodedString = Base64.decode(historia.imagenBase64, Base64.DEFAULT)
         val decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
         Glide.with(holder.itemView.context).load(decodedByte).into(holder.imagenImageView)
+
+        holder.favoriteButton.setOnClickListener {
+            MarcarFavoritoTask(historia.historiaId, idUsuario, holder).execute()
+        }
     }
 
     override fun getItemCount(): Int {
@@ -115,7 +147,43 @@ class HistoriaAdapter(private var historias: List<Historia>) : RecyclerView.Adap
 
     // Función para actualizar los datos del adaptador
     fun updateData(newHistorias: List<Historia>) {
-        historias = newHistorias
+        historias = newHistorias as ArrayList<Historia>
         notifyDataSetChanged()
+    }
+
+    inner class MarcarFavoritoTask(
+        private val historiaId: Int,
+        private val usuarioId: Int,
+        private val holder: ViewHolder
+    ) : AsyncTask<Void, Void, String>() {
+
+        override fun doInBackground(vararg params: Void?): String {
+            val urlString = "http://192.168.0.8:80/guardar_favorito.php?historia_id=$historiaId&usuario_id=$usuarioId"
+
+            return try {
+                URL(urlString).readText()
+            } catch (e: Exception) {
+                Log.e("MarcarFavoritoTask", "Error: ${e.message}")
+                "Error: ${e.message}" // Devuelve el mensaje de error
+            }
+        }
+
+        override fun onPostExecute(result: String?) {
+            super.onPostExecute(result)
+            try {
+                val jsonResponse = JSONObject(result)
+                val status = jsonResponse.getString("status")
+                val message = jsonResponse.getString("message")
+
+                if (status == "Success") {
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: JSONException) {
+                Log.e("MarcarFavoritoTask", "Error al analizar JSON: ${e.message}")
+                Toast.makeText(context, "Error al procesar la respuesta del servidor", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
