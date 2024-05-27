@@ -46,28 +46,29 @@ class VerHistoriaActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        val idUsuario = obtenerIdUsuario() // Implementa esta función para obtener el ID del usuario
+        // Obtener el ID del usuario del intent
+        val idUsuario = intent.getIntExtra("usuarioID", -1)
 
-        adapter = HistoriaAdapter(this, ArrayList(), idUsuario)
-        recyclerView.adapter = adapter
+        // Verificar que se haya recibido el ID de usuario
+        if (idUsuario != -1) {
+            adapter = HistoriaAdapter(this, ArrayList(), idUsuario)
+            recyclerView.adapter = adapter
 
-        ObtenerHistoriasTask().execute()
+            ObtenerHistoriasTask().execute()
+        } else {
+            Toast.makeText(this, "Error al obtener el ID del usuario", Toast.LENGTH_SHORT).show()
+        }
 
         // Referencia al botón "Favoritos" en la barra de navegación inferior
         val favoritosButton = findViewById<LinearLayout>(R.id.favoritosButton)
 
         favoritosButton.setOnClickListener {
-            // Iniciar FavoritosActivity
+            // Iniciar FavoritosActivity y pasar el usuarioID
             val intent = Intent(this@VerHistoriaActivity, FavoritosActivity::class.java)
+            intent.putExtra("usuarioID", idUsuario)
             startActivity(intent)
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
-    }
-
-    // Función para obtener el ID del usuario (debes implementarla)
-    private fun obtenerIdUsuario(): Int {
-        // ... (lógica para obtener el ID del usuario)
-        return 1 // Ejemplo: Devuelve un ID de usuario de prueba
     }
 
     inner class ObtenerHistoriasTask : AsyncTask<Void, Void, String>() {
@@ -129,7 +130,6 @@ class HistoriaAdapter(private val context: Context, private var historias: Array
         val historia = historias[position]
         holder.tituloTextView.text = historia.titulo
         holder.descripcionTextView.text = historia.descripcion
-        val idUsuario = 1;
 
         // Cargar imagen (sin cambios)
         val decodedString = Base64.decode(historia.imagenBase64, Base64.DEFAULT)

@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import com.example.historiasdeviaje.R
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
@@ -65,13 +66,25 @@ class LoginActivity : AppCompatActivity() {
         override fun onPostExecute(result: String) {
             super.onPostExecute(result)
             Log.d("LoginActivity", "Respuesta del servidor: $result")
-            val jsonResponse = JSONObject(result)
-            if (jsonResponse["success"] == true) {
-                val intent = Intent(this@LoginActivity, PublicarHistoriaActivity::class.java)
-                startActivity(intent)
-            } else {
-                Log.d("LoginActivity", "Error al iniciar sesión")
+
+            try {
+                val jsonResponse = JSONObject(result)
+                if (jsonResponse.getBoolean("success")) {
+                    val usuarioID = jsonResponse.getInt("usuarioID") // Obtener el ID del usuario
+
+                    // Iniciar PublicarHistoriaActivity y pasar el usuarioID
+                    val intent = Intent(this@LoginActivity, VerHistoriaActivity::class.java)
+                    intent.putExtra("usuarioID", usuarioID) // Pasar el ID como extra
+                    startActivity(intent)
+                } else {
+                    Log.d("LoginActivity", "Error al iniciar sesión")
+                    // Manejar el error de inicio de sesión (mostrar mensaje al usuario, etc.)
+                }
+            } catch (e: JSONException) {
+                Log.e("LoginActivity", "Error al analizar JSON: ${e.message}")
+                // Manejar el error de análisis JSON (mostrar mensaje al usuario, etc.)
             }
         }
+
     }
 }

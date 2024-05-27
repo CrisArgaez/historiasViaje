@@ -48,8 +48,18 @@ class FavoritosActivity : AppCompatActivity() {
         adapter = FavoritosAdapter(this, historiasFavoritas)
         recyclerView.adapter = adapter
 
-        // Cargamos las historias favoritas
-        ObtenerHistoriasFavoritasTask().execute()
+        // Obtenemos el ID del usuario del Intent
+        val idUsuario = intent.getIntExtra("usuarioID", -1)
+
+        // Verificamos si el ID del usuario es válido
+        if (idUsuario != -1) {
+            // Cargamos las historias favoritas con el ID del usuario obtenido
+            ObtenerHistoriasFavoritasTask(idUsuario).execute()
+        } else {
+            // Manejo del error si no se encuentra el ID del usuario
+            Toast.makeText(this, "Error al obtener el ID del usuario", Toast.LENGTH_SHORT).show()
+            finish() // Puedes finalizar la actividad si no hay un ID válido
+        }
 
         // Referencia a los botones de navegación en FavoritosActivity
         val historiasButton = findViewById<LinearLayout>(R.id.historiasButton)
@@ -67,14 +77,9 @@ class FavoritosActivity : AppCompatActivity() {
         }
     }
 
-    private fun obtenerIdUsuario(): Int {
-        // ... (lógica para obtener el ID del usuario)
-        return 1 // Ejemplo: Devuelve un ID de usuario de prueba
-    }
-
-    inner class ObtenerHistoriasFavoritasTask : AsyncTask<Void, Void, String>() {
+    inner class ObtenerHistoriasFavoritasTask (private val usuarioId: Int) : AsyncTask<Void, Void, String>() {
         override fun doInBackground(vararg params: Void?): String {
-            val urlString = URL("http://192.168.0.8:80/obtener_favoritos.php?usuario_id=1") // Reemplaza con tu IP real
+            val urlString = URL("http://192.168.0.8:80/obtener_favoritos.php?usuario_id=$usuarioId") //
             return try {
                 URL(urlString.toString()).readText()
             } catch (e: Exception) {

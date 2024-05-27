@@ -1,10 +1,10 @@
 <?php
 header('Content-Type: application/json');
 
-$servername = "localhost"; // Reemplaza con la dirección de tu servidor MySQL
-$username = "root";      // Reemplaza con tu nombre de usuario de MySQL
-$password = "1234";      // Reemplaza con tu contraseña de MySQL
-$dbname = "Android";      // Nombre de tu base de datos
+$servername = "localhost";
+$username = "root";
+$password = "1234";
+$dbname = "Android";
 
 // Crear conexión
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -18,26 +18,30 @@ if ($conn->connect_error) {
 $historiaId = $_GET['historia_id'];
 $usuarioId = $_GET['usuario_id'];
 
-// Preparar la consulta SQL (usando consultas preparadas para mayor seguridad)
-$stmt = $conn->prepare("INSERT INTO favoritosUsuario (UsuarioID, HistoriaID) VALUES (?, ?)");
+// Verificar si la historia ya está guardada como favorita
+$sqlCheck = "SELECT * FROM favoritosUsuario WHERE UsuarioID = ? AND HistoriaID = ?";
+$stmtCheck = $conn->prepare($sqlCheck);
+$stmtCheck->bind_param("ii", $usuarioId, $historiaId);
+$stmtCheck->execute();
+$resultCheck = $stmtCheck->get_result();
 
-// Validar si la preparación de la consulta fue exitosa
-if (!$stmt) {
-    error_log("Error en la preparación de la consulta: " . $conn->error);
-    die(json_encode(array('status' => 'Error', 'message' => 'Error en la preparación de la consulta')));
-}
-
-// Vincular parámetros a la consulta preparada
-$stmt->bind_param("ii", $usuarioId, $historiaId);
-
-// Ejecutar la consulta
-if ($stmt->execute()) {
-    echo json_encode(array('status' => 'Success', 'message' => 'Favorito actualizado'));
+if ($resultCheck->num_rows > 0) {
+    // La historia ya está guardada como favorita
+    echo json_encode(array('status' => 'Error', 'message' => 'Ya has guardado esta historia'));
 } else {
-    echo json_encode(array('status' => 'Error', 'message' => 'Error al actualizar favorito: ' . $stmt->error));
+    // La historia no está guardada, proceder con la inserción
+    $stmt = $conn->prepare("INSERT INTO favoritosUsuario (UsuarioID, HistoriaID) VALUES (?, ?)");
+    $stmt->bind_param("ii", $usuarioId, $historiaId);
+
+    if ($stmt->execute()) {
+        echo json_encode(array('status' => 'Success', 'message' => 'Favorito actualizado'));
+    } else {
+        echo json_encode(array('status' => 'Error', 'message' => 'Error al actualizar favorito: ' . $stmt->error));
+    }
+    $stmt->close();
 }
 
 // Cerrar la consulta y la conexión
-$stmt->close();
+$stmtCheck->close();
 $conn->close();
 ?>
