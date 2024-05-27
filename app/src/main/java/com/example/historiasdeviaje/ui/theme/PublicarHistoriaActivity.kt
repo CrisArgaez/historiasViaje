@@ -2,8 +2,11 @@ package com.example.historiasdeviaje.ui.theme
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
@@ -13,9 +16,12 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.example.historiasdeviaje.R
 import org.json.JSONObject
@@ -34,6 +40,15 @@ class PublicarHistoriaActivity : AppCompatActivity() {
     lateinit var botonSubirFotos: Button
     lateinit var botonPublicar: Button
     lateinit var botonTomarFoto: Button
+
+    private lateinit var tvLatitud: TextView
+    private lateinit var tvLongitud: TextView
+    private lateinit var btnObtenerCoordenadas: Button
+    private lateinit var locationManager: LocationManager
+
+    private val locationPermissionCode = 2
+    private var latitud: Double? = null
+    private var longitud: Double? = null
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -66,6 +81,12 @@ class PublicarHistoriaActivity : AppCompatActivity() {
         botonPublicar = findViewById(R.id.boton_publicar)
         botonTomarFoto = findViewById(R.id.boton_tomar_foto)
 
+        tvLatitud = findViewById(R.id.tvLatitud)
+        tvLongitud = findViewById(R.id.tvLongitud)
+        btnObtenerCoordenadas = findViewById(R.id.btnObtenerCoordenadas)
+
+        locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+
         botonSubirFotos.setOnClickListener {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
@@ -78,6 +99,10 @@ class PublicarHistoriaActivity : AppCompatActivity() {
             requestPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
 
+        btnObtenerCoordenadas.setOnClickListener {
+            obtenerCoordenadas()
+        }
+
         botonPublicar.setOnClickListener {
             if (uriFoto != null) {
                 val inputStream = contentResolver.openInputStream(uriFoto!!)
@@ -87,7 +112,7 @@ class PublicarHistoriaActivity : AppCompatActivity() {
                 val titulo = tituloHistoria.text.toString()
                 val descripcion = descripcionHistoria.text.toString()
 
-                insertarPublicacion(titulo, descripcion, imagenBase64)
+                insertarPublicacion(titulo, descripcion, imagenBase64, latitud ?: 0.0, longitud ?: 0.0) // Valores por defecto si no se obtiene la ubicación
 
                 val intent = Intent(this, VerHistoriaActivity::class.java).apply {
                     putExtra("TITULO", titulo)
@@ -114,12 +139,14 @@ class PublicarHistoriaActivity : AppCompatActivity() {
         }
     }
 
-    private fun insertarPublicacion(titulo: String, descripcion: String, imagenBase64: String) {
+    private fun insertarPublicacion(titulo: String, descripcion: String, imagenBase64: String, latitud: Double, longitud: Double) {
         InsertarPublicacionTask().execute(
             JSONObject().apply {
                 put("titulo", titulo)
                 put("descripcion", descripcion)
                 put("imagen", imagenBase64)
+                put("latitud", latitud)
+                put("longitud", longitud)
             }.toString()
         )
     }
@@ -180,4 +207,21 @@ class PublicarHistoriaActivity : AppCompatActivity() {
         val path = MediaStore.Images.Media.insertImage(contentResolver, bitmap, "Title", null)
         return Uri.parse(path.toString())
     }
+    private fun obtenerCoordenadas() {
+        if ((ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationPermissionCode)
+        } else {
+            val locationProvider = LocationManager.NETWORK_PROVIDER
+            val lastKnownLocation: Location? = locationManager.getLastKnownLocation(locationProvider)
+            if (lastKnownLocation != null) {
+                tvLatitud.text = "Latitud: ${lastKnownLocation.latitude}"
+                tvLongitud.text = "Longitud: ${lastKnownLocation.longitude}"
+                latitud = lastKnownLocation.latitude
+                longitud = lastKnownLocation.longitude
+            } else {
+                Toast.makeText(this, "No se pudo obtener la ubicación. Intenta de nuevo más tarde.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
 }

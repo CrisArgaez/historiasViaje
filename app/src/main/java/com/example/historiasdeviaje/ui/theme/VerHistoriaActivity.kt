@@ -2,6 +2,7 @@ package com.example.historiasdeviaje.ui.theme
 
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.os.Bundle
@@ -26,6 +27,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
+
 // Clase de datos para representar una historia
 data class Historia(
     val historiaId: Int,
@@ -46,8 +48,18 @@ class VerHistoriaActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Obtener el ID del usuario del intent
-        val idUsuario = intent.getIntExtra("usuarioID", -1)
+        val sharedPreferences = getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
+
+        // Obtener el ID del usuario del intent o de SharedPreferences
+        var idUsuario = intent.getIntExtra("usuarioID", -1)
+
+        // Si el ID no está en el Intent, intenta obtenerlo de SharedPreferences
+        if (idUsuario == -1) {
+            idUsuario = sharedPreferences.getInt("usuarioID", -1)
+        } else {
+            // Si el ID está en el Intent, guárdalo en SharedPreferences (primera vez que entra)
+            sharedPreferences.edit().putInt("usuarioID", idUsuario).apply()
+        }
 
         // Verificar que se haya recibido el ID de usuario
         if (idUsuario != -1) {
@@ -57,6 +69,8 @@ class VerHistoriaActivity : AppCompatActivity() {
             ObtenerHistoriasTask().execute()
         } else {
             Toast.makeText(this, "Error al obtener el ID del usuario", Toast.LENGTH_SHORT).show()
+            // Puedes manejar el error de forma más apropiada aquí, como redirigir al inicio de sesión
+            finish()
         }
 
         // Referencia al botón "Favoritos" en la barra de navegación inferior
@@ -70,10 +84,17 @@ class VerHistoriaActivity : AppCompatActivity() {
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
+        adapter.onItemClickListener = { historia -> // Asigna el listener al adaptador
+            val intent = Intent(this@VerHistoriaActivity, DetalleHistoriaActivity::class.java)
+            intent.putExtra("HISTORIA_ID", historia.historiaId)
+            startActivity(intent)
+        }
+
         val addButton: FloatingActionButton = findViewById(R.id.addButton)
         val intent = Intent(this, PublicarHistoriaActivity::class.java)
 
         addButton.setOnClickListener {
+            intent.putExtra("usuarioID", idUsuario) // Agrega el ID del usuario al Intent
             startActivity(intent)
         }
     }
@@ -120,6 +141,9 @@ class VerHistoriaActivity : AppCompatActivity() {
 // Adaptador para el RecyclerView
 class HistoriaAdapter(private val context: Context, private var historias: ArrayList<Historia>, private val idUsuario: Int) : RecyclerView.Adapter<HistoriaAdapter.ViewHolder>() {
 
+    // Listener para el clic en un elemento
+    var onItemClickListener: ((Historia) -> Unit)? = null
+
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tituloTextView: TextView = itemView.findViewById(R.id.tituloTextView)
         val descripcionTextView: TextView = itemView.findViewById(R.id.descripcionTextView)
@@ -145,6 +169,10 @@ class HistoriaAdapter(private val context: Context, private var historias: Array
 
         holder.favoriteButton.setOnClickListener {
             MarcarFavoritoTask(historia.historiaId, idUsuario, holder).execute()
+        }
+
+        holder.itemView.setOnClickListener { // Maneja el clic en el itemView
+            onItemClickListener?.invoke(historia) // Llama al listener
         }
     }
 

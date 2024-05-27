@@ -7,14 +7,11 @@ CREATE TABLE Usuarios (
 	Nombre VARCHAR(255),
 	Contrasena VARCHAR(255) NOT NULL
 );
-CREATE TABLE Historias ( 
-HistoriaID INT PRIMARY KEY AUTO_INCREMENT, 
-UsuarioID INT, 
-Titulo VARCHAR(255) NOT NULL, 
-Descripcion TEXT, 
-Imagen LONGBLOB,   
-FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID) 
-);
+CREATE TABLE Historias ( HistoriaID INT PRIMARY KEY AUTO_INCREMENT, UsuarioID INT, Titulo VARCHAR(255) NOT NULL, Descripcion TEXT, Imagen LONGBLOB,   
+ FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID) );
+ 
+ ALTER TABLE Historias ADD Latitud DECIMAL(10, 8), ADD Longitud DECIMAL(10, 8);
+ 
  CREATE TABLE favoritosUsuario (
     FavoritoID INT PRIMARY KEY AUTO_INCREMENT,
     UsuarioID INT,
@@ -22,6 +19,3 @@ FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID)
     FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID),
     FOREIGN KEY (HistoriaID) REFERENCES Historias(HistoriaID)
 );
-select * from  Usuarios;
-select * from Historias;
-SELECT * FROM favoritosUsuario;
